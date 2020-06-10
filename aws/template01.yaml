@@ -5,7 +5,7 @@ Resources:
   CloudwatchTriggerLambdaEveryMinuteRule:
     Type: AWS::Events::Rule
     Properties:
-      Description: Invoke Lambda
+      Description: Trigger Lambda Rule
       State: ENABLED
       ScheduleExpression: rate(1 minute)
       Targets:
@@ -14,9 +14,9 @@ Resources:
               - SendMetricsLambda
               - Arn
           Input: '{"operation":"call-lambda"}'
-          Id: cloudwatchRuleTriggerLambda
+          Id: ldong-cloudwatch-trigger-lambda-rule
 
-  cloudwatchRulePermissions:
+  CloudWatchRulePermissions:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref SendMetricsLambda
@@ -27,7 +27,7 @@ Resources:
           - CloudwatchTriggerLambdaEveryMinuteRule
           - Arn
 
-  AlarmSNSTopic:
+  ldongAlarmSNSTopic:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
@@ -37,7 +37,7 @@ Resources:
   MetricsAlarm:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
-      AlarmName: metricsAlert
+      AlarmName: ldongMetricsAlert
       AlarmDescription: A CloudWatch Alarm that triggers when changes are made to cloudwatch metrics
       MetricName: metrics
       Namespace: aws-training-ldong
@@ -50,10 +50,10 @@ Resources:
         - Name: "Error"
           Value: "unhandled exception"
       AlarmActions:
-        - Ref: AlarmSNSTopic
+        - Ref: ldongAlarmSNSTopic
       TreatMissingData: notBreaching
 
-  SendMetricsLambdaLambda:
+  SendMetricsLambda:
     Type: AWS::Lambda::Function
     Properties:
       Handler: index.lambda_handler
