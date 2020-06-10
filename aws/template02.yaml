@@ -1,0 +1,86 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Cloudformation template to create a Cloudwatch log filter
+Resources:
+  CloudWatchTriggerLambdaLogEveryMinuteRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Trigger Lambda Rule
+      State: ENABLED
+      ScheduleExpression: rate(1 minute)
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - LogSenderLambda
+              - Arn
+          Input: '{"operation":"call-lambda"}'
+          Id: ldong-cloudwatch-trigger-lambda-log-rule
+
+  CloudWatchLogRulePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LogSenderLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - CloudWatchTriggerLambdaLogEveryMinuteRule
+          - Arn
+
+  SNSAlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: "ldong@thoughtworks.com"
+          Protocol: email
+
+  MyBadLogAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: logsAlert
+      AlarmDescription: A CloudWatch Alarm that triggers when changes are made to cloudwatch logs
+      MetricName: logs
+      Namespace: aws-training-ldong
+      Statistic: Sum
+      Period: "60"
+      EvaluationPeriods: "1"
+      Threshold: "100"
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - Ref: SNSAlarmTopic
+      TreatMissingData: notBreaching
+
+  MyBadLogMetricsFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "a bad log"
+      LogGroupName: !Ref LogSenderGroup
+      MetricTransformations:
+        - MetricValue: "1"
+          MetricNamespace: aws-training-ldong
+          MetricName: logs
+
+  LogSenderGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: LogSenderLambda
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName:
+        Fn::Join:
+          - ""
+          - - "/aws/lambda/"
+            - Ref: LogSenderLambda
+      RetentionInDays: 1
+
+  LogSenderLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Runtime: python2.7
+      Role: arn:aws:iam::494526681395:role/for-aws-training-2
+      Code:
+        ZipFile: |
+          import json
+          import os
+          def lambda_handler(event, context):
+              print('a bad log')
