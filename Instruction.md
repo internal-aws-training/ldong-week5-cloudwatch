@@ -21,3 +21,7 @@ Delete Stack
 ```bash
 aws cloudformation delete-stack --stack-name ldong-cf-lambda-stack
 ```
+
+## Lambda - Boto3
+
+Create a Lambda function use [Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) to [send metric data](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch.html#CloudWatch.Client.put_metric_data) to metrics.
